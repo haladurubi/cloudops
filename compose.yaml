@@ -24,5 +24,26 @@ services:
       retries: 3
       start_period: 10s
 
+  worker:
+    image: cloudops-api:local
+
+    command:
+      - python
+      - -m
+      - app.worker
+      - --interval
+      - "15"
+
+    environment:
+      DATABASE_URL: sqlite:////data/cloudops.db
+      MONITOR_TARGET_URL: http://api:8000/health
+
+    volumes:
+      - cloudops-data:/data
+
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   cloudops-data:

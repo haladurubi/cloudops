@@ -2,6 +2,7 @@
 import argparse
 import time
 from collections.abc import Callable
+import os
 
 from sqlmodel import Session, select
 
@@ -11,8 +12,10 @@ from app.models import ServiceDB
 from app.monitoring import check_url, HealthResult
 
 
-LOCAL_HEALTH_URL = "http://127.0.0.1:8000/health"
-
+LOCAL_HEALTH_URL = os.getenv(
+    "MONITOR_TARGET_URL",
+    "http://127.0.0.1:8000/health",
+)
 
 def run_checks(
     session: Session,
