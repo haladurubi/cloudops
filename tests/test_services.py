@@ -2,32 +2,25 @@
 import pytest
 
 from fastapi.testclient import TestClient
-from app.main import app, services
+from app.main import app
 
 client = TestClient(app)
 
 
-@pytest.fixture(autouse=True)
-def clear_services():
-    services.clear()
-    yield
-    services.clear()
-
-
-def test_services_initially_empty():
+def test_services_initially_empty(client):
     response = client.get("/services")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_create_service():
+def test_create_service(client):
     response = client.post(
         "/services",
         json={
             "name": "Demo API",
-            "health_url": "https://example.com/health"
-        }
+            "health_url": "https://example.com/health",
+        },
     )
 
     assert response.status_code == 201
@@ -35,13 +28,13 @@ def test_create_service():
     assert "id" in response.json()
 
 
-def test_service_appears_in_list():
+def test_service_appears_in_list(client):
     client.post(
         "/services",
         json={
             "name": "Payment API",
-            "health_url": "https://example.com/health"
-        }
+            "health_url": "https://example.com/health",
+        },
     )
 
     response = client.get("/services")
@@ -51,13 +44,13 @@ def test_service_appears_in_list():
     assert response.json()[0]["name"] == "Payment API"
 
 
-def test_invalid_url_rejected():
+def test_invalid_url_rejected(client):
     response = client.post(
         "/services",
         json={
             "name": "Invalid API",
-            "health_url": "not-a-valid-url"
-        }
+            "health_url": "not-a-valid-url",
+        },
     )
 
     assert response.status_code == 422

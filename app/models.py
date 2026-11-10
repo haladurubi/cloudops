@@ -1,6 +1,7 @@
-from uuid import UUID
-
+from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, HttpUrl
+from sqlmodel import SQLModel, Field as SQLField
+
 
 
 class ServiceCreate(BaseModel):
@@ -10,3 +11,10 @@ class ServiceCreate(BaseModel):
 
 class ServiceRead(ServiceCreate):
     id: UUID
+
+class ServiceDB(SQLModel, table=True):
+    __tablename__ = "services"
+
+    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
+    name: str
+    health_url: str
