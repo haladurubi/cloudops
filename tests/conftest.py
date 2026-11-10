@@ -1,3 +1,4 @@
+
 import pytest
 
 from fastapi.testclient import TestClient
@@ -9,15 +10,22 @@ from app.main import app
 
 
 @pytest.fixture
-def client():
-    test_engine = create_engine(
+def test_engine():
+    engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
 
-    SQLModel.metadata.create_all(test_engine)
+    SQLModel.metadata.create_all(engine)
 
+    yield engine
+
+    engine.dispose()
+
+
+@pytest.fixture
+def client(test_engine):
     def get_test_session():
         with Session(test_engine) as session:
             yield session
@@ -29,4 +37,3 @@ def client():
             yield test_client
     finally:
         app.dependency_overrides.pop(get_session, None)
-        test_engine.dispose()
