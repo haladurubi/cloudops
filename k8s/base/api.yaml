@@ -1,0 +1,66 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudops-api
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cloudops-api
+  template:
+    metadata:
+      labels:
+        app: cloudops-api
+    spec:
+      securityContext:
+        fsGroup: 2000
+      containers:
+        - name: api
+          image: cloudops-api:kind-v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:////data/cloudops.db"
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: cloudops-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudops-api
+spec:
+  type: ClusterIP
+  selector:
+    app: cloudops-api
+  ports:
+    - port: 8000
+      targetPort: 8000

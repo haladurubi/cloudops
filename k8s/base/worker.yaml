@@ -1,0 +1,50 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudops-worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cloudops-worker
+  template:
+    metadata:
+      labels:
+        app: cloudops-worker
+    spec:
+      securityContext:
+        fsGroup: 2000
+      containers:
+        - name: worker
+          image: cloudops-api:kind-v1
+          imagePullPolicy: Never
+          command:
+            - python
+            - -u
+            - -m
+            - app.worker
+          args:
+            - --interval
+            - "15"
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:////data/cloudops.db"
+            - name: MONITOR_TARGET_URL
+              value: "http://cloudops-api:8000/health"
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: cloudops-data
